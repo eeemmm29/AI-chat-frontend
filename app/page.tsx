@@ -42,32 +42,52 @@ export default function Home() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !user) return;
 
-    // Connect to backend
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000";
-    const newSocket = io(socketUrl);
-    setSocket(newSocket);
+    let socketInstance: Socket;
 
-    newSocket.on("connect", () => {
-      console.log("Connected to server");
-    });
+    const initSocket = async () => {
+      try {
+        const token = await user.getIdToken();
+        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000";
+        socketInstance = io(socketUrl, {
+          auth: { token }
+        });
+        setSocket(socketInstance);
 
-    newSocket.on("message", (message: Message) => {
-      setMessages((prev) => [...prev, message]);
-    });
+        socketInstance.on("connect", () => {
+          console.log("Connected to server");
+        });
 
-    newSocket.on("typing", (data: { userId: string, isTyping: boolean, name: string }) => {
-      if (data.userId !== currentUser.id) {
-        setIsTyping(data.isTyping ? data.name : null);
+        socketInstance.on("receive_message", (data: any) => {
+          // Map backend receive_message to frontend Message structure
+          const formattedMsg: Message = {
+            id: data.id.toString(),
+            text: data.content,
+            senderId: data.sender,
+            senderName: data.sender, // We might need to fetch names later
+            timestamp: new Date(data.timestamp).getTime(),
+          };
+          setMessages((prev) => [...prev, formattedMsg]);
+        });
+
+        socketInstance.on("typing", (data: { sender: string, is_typing: boolean }) => {
+          if (data.sender !== currentUser.id) {
+            setIsTyping(data.is_typing ? data.sender : null);
+          }
+        });
+      } catch (error) {
+        console.error("Failed to initialize socket:", error);
       }
-    });
+    };
+
+    initSocket();
 
     return () => {
-      newSocket.close();
+      if (socketInstance) socketInstance.close();
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
-  }, [currentUser?.id]);
+  }, [currentUser?.id, user]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,31 +96,29 @@ export default function Home() {
   const sendMessage = () => {
     if (!inputText.trim() || !socket || !currentUser) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: inputText.trim(),
-      senderId: currentUser.id,
-      senderName: currentUser.name,
-      timestamp: Date.now(),
+    const payload = {
+      content: inputText.trim(),
+      recipient: "general",
+      timestamp: new Date().toISOString(),
     };
 
-    socket.emit("message", newMessage);
+    socket.emit("message", payload);
     setInputText("");
 
     // Stop typing indicator
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    socket.emit("typing", { userId: currentUser.id, isTyping: false, name: currentUser.name });
+    socket.emit("typing", { sender: currentUser.id, is_typing: false, recipient: "general" });
   };
 
   const handleInputChange = (val: string) => {
     setInputText(val);
 
     if (socket && currentUser) {
-      socket.emit("typing", { userId: currentUser.id, isTyping: true, name: currentUser.name });
+      socket.emit("typing", { sender: currentUser.id, is_typing: true, recipient: "general" });
 
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
-        socket.emit("typing", { userId: currentUser.id, isTyping: false, name: currentUser.name });
+        socket.emit("typing", { sender: currentUser.id, is_typing: false, recipient: "general" });
       }, 2000);
     }
   };
