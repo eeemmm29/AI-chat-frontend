@@ -129,6 +129,26 @@ export default function Home() {
     }
   };
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const { signInWithEmail, signUpWithEmail } = useAuth();
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    try {
+      if (isSignUp) {
+        await signUpWithEmail(email, password);
+      } else {
+        await signInWithEmail(email, password);
+      }
+    } catch (err: any) {
+      setAuthError(err.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-[calc(100vh-140px)] w-full items-center justify-center">
@@ -153,7 +173,42 @@ export default function Home() {
             <h1 className="text-2xl font-bold mb-2">Welcome to AI Chat</h1>
             <p className="text-muted">Sign in to start chatting with your friends and AI assistants.</p>
           </div>
+
+          <form onSubmit={handleEmailAuth} className="w-full flex flex-col gap-4">
+            <TextField 
+              label="Email" 
+              type="email" 
+              value={email} 
+              onChange={setEmail} 
+              required 
+            />
+            <TextField 
+              label="Password" 
+              type="password" 
+              value={password} 
+              onChange={setPassword} 
+              required 
+            />
+            {authError && <p className="text-danger text-xs">{authError}</p>}
+            <Button type="submit" variant="primary" className="w-full">
+              {isSignUp ? "Sign Up" : "Sign In"}
+            </Button>
+          </form>
+
+          <div className="flex items-center gap-2 w-full">
+            <div className="flex-1 h-px bg-separator"></div>
+            <span className="text-xs text-muted">OR</span>
+            <div className="flex-1 h-px bg-separator"></div>
+          </div>
+
           <LoginButton />
+
+          <button 
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-xs text-accent hover:underline"
+          >
+            {isSignUp ? "Already have an account? Sign In" : "Need an account? Sign Up"}
+          </button>
         </div>
       </div>
     );
