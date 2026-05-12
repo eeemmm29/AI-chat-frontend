@@ -27,15 +27,17 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
 
-  const currentUser = user ? { 
-    id: user.uid, 
-    name: user.displayName || user.email || "Anonymous", 
-    isOnline: true 
-  } : null;
+  const currentUser = user
+    ? {
+        id: user.uid,
+        name: user.displayName || user.email || "Anonymous",
+        isOnline: true,
+      }
+    : null;
 
   const [users, setUsers] = useState<User[]>([
     { id: "user1", name: "Alice", isOnline: true },
-    { id: "user2", name: "Bob", isOnline: false }
+    { id: "user2", name: "Bob", isOnline: false },
   ]);
   const [isTyping, setIsTyping] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -49,9 +51,10 @@ export default function Home() {
     const initSocket = async () => {
       try {
         const token = await user.getIdToken();
-        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000";
+        const socketUrl =
+          process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8080";
         socketInstance = io(socketUrl, {
-          auth: { token }
+          auth: { token },
         });
         setSocket(socketInstance);
 
@@ -71,11 +74,14 @@ export default function Home() {
           setMessages((prev) => [...prev, formattedMsg]);
         });
 
-        socketInstance.on("typing", (data: { sender: string, is_typing: boolean }) => {
-          if (data.sender !== currentUser.id) {
-            setIsTyping(data.is_typing ? data.sender : null);
-          }
-        });
+        socketInstance.on(
+          "typing",
+          (data: { sender: string; is_typing: boolean }) => {
+            if (data.sender !== currentUser.id) {
+              setIsTyping(data.is_typing ? data.sender : null);
+            }
+          },
+        );
       } catch (error) {
         console.error("Failed to initialize socket:", error);
       }
@@ -107,18 +113,30 @@ export default function Home() {
 
     // Stop typing indicator
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    socket.emit("typing", { sender: currentUser.id, is_typing: false, recipient: "general" });
+    socket.emit("typing", {
+      sender: currentUser.id,
+      is_typing: false,
+      recipient: "general",
+    });
   };
 
   const handleInputChange = (val: string) => {
     setInputText(val);
 
     if (socket && currentUser) {
-      socket.emit("typing", { sender: currentUser.id, is_typing: true, recipient: "general" });
+      socket.emit("typing", {
+        sender: currentUser.id,
+        is_typing: true,
+        recipient: "general",
+      });
 
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
-        socket.emit("typing", { sender: currentUser.id, is_typing: false, recipient: "general" });
+        socket.emit("typing", {
+          sender: currentUser.id,
+          is_typing: false,
+          recipient: "general",
+        });
       }, 2000);
     }
   };
@@ -165,29 +183,44 @@ export default function Home() {
       <div className="flex h-[calc(100vh-140px)] w-full items-center justify-center">
         <div className="flex flex-col items-center gap-6 p-8 border border-separator rounded-3xl bg-surface shadow-surface max-w-md w-full text-center">
           <div className="w-16 h-16 rounded-2xl bg-accent/10 text-accent flex items-center justify-center">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            <svg
+              className="w-8 h-8"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
             </svg>
           </div>
           <div>
             <h1 className="text-2xl font-bold mb-2">Welcome to AI Chat</h1>
-            <p className="text-muted">Sign in to start chatting with your friends and AI assistants.</p>
+            <p className="text-muted">
+              Sign in to start chatting with your friends and AI assistants.
+            </p>
           </div>
 
-          <form onSubmit={handleEmailAuth} className="w-full flex flex-col gap-4">
-            <TextField 
-              label="Email" 
-              type="email" 
-              value={email} 
-              onChange={setEmail} 
-              required 
+          <form
+            onSubmit={handleEmailAuth}
+            className="w-full flex flex-col gap-4"
+          >
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              required
             />
-            <TextField 
-              label="Password" 
-              type="password" 
-              value={password} 
-              onChange={setPassword} 
-              required 
+            <TextField
+              label="Password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              required
             />
             {authError && <p className="text-danger text-xs">{authError}</p>}
             <Button type="submit" variant="primary" className="w-full">
@@ -203,11 +236,13 @@ export default function Home() {
 
           <LoginButton />
 
-          <button 
+          <button
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-xs text-accent hover:underline"
           >
-            {isSignUp ? "Already have an account? Sign In" : "Need an account? Sign Up"}
+            {isSignUp
+              ? "Already have an account? Sign In"
+              : "Need an account? Sign Up"}
           </button>
         </div>
       </div>
@@ -220,7 +255,10 @@ export default function Home() {
       <div className="hidden md:flex flex-col w-64 lg:w-80 border border-separator rounded-2xl bg-surface shadow-surface p-4 overflow-y-auto">
         <div className="flex items-center justify-between mb-4 px-2">
           <h2 className="text-xl font-bold">Contacts</h2>
-          <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-bold" title={currentUser.name}>
+          <div
+            className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-bold"
+            title={currentUser.name}
+          >
             {currentUser.name.charAt(0)}
           </div>
         </div>
@@ -228,7 +266,10 @@ export default function Home() {
         <div className="mb-4">
           <TextField aria-label="Search users" type="search">
             <InputGroup>
-              <InputGroup.Input className="text-sm" placeholder="Search contacts..." />
+              <InputGroup.Input
+                className="text-sm"
+                placeholder="Search contacts..."
+              />
             </InputGroup>
           </TextField>
         </div>
@@ -247,7 +288,10 @@ export default function Home() {
             </div>
           </div>
           {users.map((user) => (
-            <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-accent/10 cursor-pointer transition-colors">
+            <div
+              key={user.id}
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-accent/10 cursor-pointer transition-colors"
+            >
               <div className="relative">
                 <div className="w-10 h-10 rounded-full bg-accent/50 text-accent-foreground flex items-center justify-center font-bold">
                   {user.name.charAt(0)}
@@ -258,7 +302,9 @@ export default function Home() {
               </div>
               <div className="flex-col">
                 <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted">{user.isOnline ? 'Online' : 'Offline'}</p>
+                <p className="text-xs text-muted">
+                  {user.isOnline ? "Online" : "Offline"}
+                </p>
               </div>
             </div>
           ))}
@@ -287,22 +333,41 @@ export default function Home() {
             <div className="flex-1 flex items-center justify-center text-muted text-center">
               <div>
                 <p className="mb-2">No messages yet.</p>
-                <p className="text-sm opacity-70">Start a conversation by typing a message below!</p>
+                <p className="text-sm opacity-70">
+                  Start a conversation by typing a message below!
+                </p>
               </div>
             </div>
           ) : (
             messages.map((msg) => {
               const isMe = msg.senderId === currentUser.id;
               return (
-                <div key={msg.id} className={clsx("flex max-w-[80%]", isMe ? "self-end" : "self-start")}>
-                  <div className={clsx(
-                    "px-4 py-2 rounded-2xl",
-                    isMe ? "bg-accent text-accent-foreground rounded-br-sm" : "bg-muted/20 text-foreground rounded-bl-sm"
-                  )}>
-                    {!isMe && <p className="text-xs font-semibold mb-1 opacity-70">{msg.senderName}</p>}
+                <div
+                  key={msg.id}
+                  className={clsx(
+                    "flex max-w-[80%]",
+                    isMe ? "self-end" : "self-start",
+                  )}
+                >
+                  <div
+                    className={clsx(
+                      "px-4 py-2 rounded-2xl",
+                      isMe
+                        ? "bg-accent text-accent-foreground rounded-br-sm"
+                        : "bg-muted/20 text-foreground rounded-bl-sm",
+                    )}
+                  >
+                    {!isMe && (
+                      <p className="text-xs font-semibold mb-1 opacity-70">
+                        {msg.senderName}
+                      </p>
+                    )}
                     <p className="text-sm break-words">{msg.text}</p>
                     <p className="text-[10px] opacity-60 text-right mt-1">
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
                 </div>
@@ -313,9 +378,18 @@ export default function Home() {
             <div className="self-start px-4 py-2 bg-muted/20 rounded-2xl rounded-bl-sm flex items-center gap-2">
               <span className="text-xs text-muted">{isTyping} is typing</span>
               <div className="flex gap-1">
-                <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                <span
+                  className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                ></span>
+                <span
+                  className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                ></span>
+                <span
+                  className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                ></span>
               </div>
             </div>
           )}
@@ -325,20 +399,18 @@ export default function Home() {
         {/* Input Area */}
         <div className="p-4 border-t border-separator bg-background/50 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <TextField 
-              className="flex-1" 
-              aria-label="Type a message" 
+            <TextField
+              className="flex-1"
+              aria-label="Type a message"
               value={inputText}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
             >
               <InputGroup>
-                <InputGroup.Input 
-                  placeholder="Type your message..." 
-                />
+                <InputGroup.Input placeholder="Type your message..." />
               </InputGroup>
             </TextField>
-            <Button 
+            <Button
               variant="primary"
               onPress={sendMessage}
               isDisabled={!inputText.trim()}
