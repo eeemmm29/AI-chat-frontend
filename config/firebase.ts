@@ -10,5 +10,13 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Simple check to prevent crashing with an obscure Firebase error
+if (!firebaseConfig.apiKey && typeof window !== "undefined") {
+  console.warn(
+    "Firebase API Key is missing. Check your .env.local file. " +
+    "Authentication will not work correctly until configured."
+  );
+}
+
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 export const auth = getAuth(app);
