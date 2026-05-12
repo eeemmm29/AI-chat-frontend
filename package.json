@@ -2,6 +2,7 @@
 	"name": "next-app-template",
 	"version": "0.0.1",
 	"type": "module",
+	"packageManager": "pnpm@11.1.1",
 	"private": true,
 	"scripts": {
 		"dev": "next dev",
@@ -49,5 +50,14 @@
 		"tailwind-variants": "3.2.2",
 		"tailwindcss": "4.1.11",
 		"typescript": "5.6.3"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@firebase/util",
+			"@tailwindcss/oxide",
+			"protobufjs",
+			"sharp",
+			"unrs-resolver"
+		]
 	}
 }
